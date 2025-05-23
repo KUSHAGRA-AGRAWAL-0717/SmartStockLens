@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# dotenv environment variables file
+.env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VSCode settings
+.vscode/
+
+# macOS metadata
+.DS_Store
+
+# Logs and local databases
+*.log
+*.sqlite3
+*.db
+
+# Streamlit specific
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# Test coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+.nox/
+.pytest_cache/
+coverage.xml
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/

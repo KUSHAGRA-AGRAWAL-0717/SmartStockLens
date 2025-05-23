@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TSLA Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #121212;
+        color: #fff;
+        font-family: Arial, sans-serif;
+      }
+      #main {
+        width: 100%;
+        height: 90vh;
+      }
+      h2 {
+        text-align: center;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Tesla (TSLA) Candlestick Chart</h2>
+    <div id="main"></div>
+
+    <script>
+      // Function to calculate Moving Average
+      function calculateMA(dayCount, data) {
+        const result = [];
+        for (let i = 0; i < data.length; i++) {
+          if (i < dayCount) {
+            result.push("-");
+            continue;
+          }
+          let sum = 0;
+          for (let j = 0; j < dayCount; j++) {
+            sum += data[i - j].ohlc[1]; // close price
+          }
+          result.push(sum / dayCount);
+        }
+        return result;
+      }
+
+      // Initialize chart with data from Streamlit
+      function initChart(data) {
+        const dates = data.map((item) => item.timestamp);
+        const ohlcData = data.map((item) => item.ohlc);
+        const volumeData = data.map((item) => item.volume);
+        const supportLine = data.map((item) => item.support);
+        const resistanceLine = data.map((item) => item.resistance);
+
+        const myChart = echarts.init(document.getElementById("main"));
+        const option = {
+          tooltip: {
+            trigger: "axis",
+            axisPointer: {
+              type: "cross",
+              animation: false,
+              lineStyle: { color: "#376df4", width: 2, opacity: 1 },
+            },
+            formatter: function (params) {
+              const date = params[0].axisValue;
+              const ohlc = params[0].data;
+              const volume = params[1].data;
+              const direction = data[params[0].dataIndex].direction;
+
+              return `Date: ${date}<br/>
+                      Open: ${ohlc[0].toFixed(2)}<br/>
+                      Close: ${ohlc[1].toFixed(2)}<br/>
+                      Low: ${ohlc[2].toFixed(2)}<br/>
+                      High: ${ohlc[3].toFixed(2)}<br/>
+                      Volume: ${volume.toFixed(2)}<br/>
+                      Direction: ${direction || "N/A"}`;
+            },
+          },
+          legend: {
+            data: [
+              "Candlestick",
+              "Volume",
+              "MA5",
+              "MA10",
+              "MA20",
+              "MA30",
+              "Support",
+              "Resistance",
+            ],
+          },
+          grid: [
+            {
+              left: "3%",
+              right: "4%",
+              bottom: "15%",
+              top: "10%",
+              containLabel: true,
+            },
+            {
+              left: "3%",
+              right: "4%",
+              bottom: "3%",
+              height: "10%",
+              containLabel: true,
+            },
+          ],
+          xAxis: [
+            {
+              type: "category",
+              data: dates,
+              axisLine: { lineStyle: { color: "#8392A5" } },
+              scale: true,
+              boundaryGap: false,
+              axisLine: { onZero: false },
+              splitLine: { show: false },
+              splitNumber: 20,
+            },
+            {
+              type: "category",
+              gridIndex: 1,
+              data: dates,
+              axisLine: { lineStyle: { color: "#8392A5" } },
+              scale: true,
+              boundaryGap: false,
+              axisLine: { onZero: false },
+              splitLine: { show: false },
+              splitNumber: 20,
+            },
+          ],
+          yAxis: [
+            {
+              scale: true,
+              axisLine: { lineStyle: { color: "#8392A5" } },
+              splitLine: { show: false },
+            },
+            {
+              scale: true,
+              gridIndex: 1,
+              splitNumber: 2,
+              axisLabel: { show: false },
+              axisLine: { show: false },
+              axisTick: { show: false },
+              splitLine: { show: false },
+            },
+          ],
+          dataZoom: [
+            { type: "inside", xAxisIndex: [0, 1] },
+            { show: true, xAxisIndex: [0, 1], type: "slider", bottom: "0%" },
+          ],
+          series: [
+            {
+              name: "Candlestick",
+              type: "candlestick",
+              data: ohlcData,
+              itemStyle: {
+                color: "#FD1050",
+                color0: "#0CF49B",
+                borderColor: "#FD1050",
+                borderColor0: "#0CF49B",
+              },
+            },
+            {
+              name: "Volume",
+              type: "bar",
+              xAxisIndex: 1,
+              yAxisIndex: 1,
+              data: volumeData,
+              itemStyle: {
+                color: function (params) {
+                  const ohlc = data[params.dataIndex].ohlc;
+                  return ohlc[1] >= ohlc[0] ? "#0CF49B" : "#FD1050";
+                },
+              },
+            },
+            {
+              name: "MA5",
+              type: "line",
+              data: calculateMA(5, data),
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 1 },
+            },
+            {
+              name: "MA10",
+              type: "line",
+              data: calculateMA(10, data),
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 1 },
+            },
+            {
+              name: "MA20",
+              type: "line",
+              data: calculateMA(20, data),
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 1 },
+            },
+            {
+              name: "MA30",
+              type: "line",
+              data: calculateMA(30, data),
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 1 },
+            },
+            {
+              name: "Support",
+              type: "line",
+              data: supportLine,
+              lineStyle: { type: "dashed", color: "#0088ff" },
+              showSymbol: false,
+              connectNulls: true,
+            },
+            {
+              name: "Resistance",
+              type: "line",
+              data: resistanceLine,
+              lineStyle: { type: "dashed", color: "#ff8800" },
+              showSymbol: false,
+              connectNulls: true,
+            },
+          ],
+        };
+
+        myChart.setOption(option);
+
+        // Handle window resize
+        window.addEventListener("resize", function () {
+          myChart.resize();
+        });
+      }
+
+      // Listen for data from Streamlit
+      window.addEventListener("load", function () {
+        // Get data from the hidden div
+        const dataElement = document.getElementById("chart-data");
+        if (dataElement) {
+          const data = JSON.parse(dataElement.textContent);
+          initChart(data);
+        } else {
+          console.error("Could not find chart data element");
+        }
+      });
+    </script>
+  </body>
+</html>
