@@ -1,19 +1,25 @@
 import google.generativeai as genai
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import time
 import pandas as pd
 
 # Load environment variables from .env file
-load_dotenv()
+# load_dotenv()
 
-# Get API key from environment variable
-api_key = os.getenv('GOOGLE_API_KEY')
-if not api_key:
-    raise ValueError("Please set the GOOGLE_API_KEY environment variable")
+# # Get API key from environment variable
+# api_key = os.getenv('GOOGLE_API_KEY')
+# if not api_key:
+#     raise ValueError("Please set the GOOGLE_API_KEY environment variable")
 
-# Configure the Gemini API
-genai.configure(api_key=api_key)
+# # Configure the Gemini API
+# genai.configure(api_key=api_key)
+
+import streamlit as st
+import google.generativeai as genai
+
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
 
 def ask_gemini(prompt, df):
     try:
