@@ -45,13 +45,59 @@
         return result;
       }
 
+      // Function to analyze bullish days in a given year
+      function analyzeBullishDays(data, year) {
+        const bullishDays = data.filter((item) => {
+          const date = new Date(item.timestamp);
+          return date.getFullYear() === year && item.ohlc[1] > item.ohlc[0]; // close > open
+        });
+
+        return {
+          totalDays: bullishDays.length,
+          percentage: (
+            (bullishDays.length /
+              data.filter(
+                (item) => new Date(item.timestamp).getFullYear() === year
+              ).length) *
+            100
+          ).toFixed(2),
+        };
+      }
+
       // Initialize chart with data from Streamlit
       function initChart(data) {
+        // Analyze bullish days for 2023
+        const bullishStats = analyzeBullishDays(data, 2023);
+
+        // Create and display stats
+        const statsDiv = document.createElement("div");
+        statsDiv.style.textAlign = "center";
+        statsDiv.style.margin = "10px 0";
+        statsDiv.innerHTML = `
+          <h3>2023 TSLA Analysis</h3>
+          <p>Bullish Days: ${bullishStats.totalDays} (${bullishStats.percentage}% of trading days)</p>
+        `;
+        document.body.insertBefore(statsDiv, document.getElementById("main"));
+
         const dates = data.map((item) => item.timestamp);
         const ohlcData = data.map((item) => item.ohlc);
         const volumeData = data.map((item) => item.volume);
-        const supportLine = data.map((item) => item.support);
-        const resistanceLine = data.map((item) => item.resistance);
+        const supportLower = data.map((item) =>
+          item.support && item.support.length === 2 ? item.support[0] : null
+        );
+        const supportUpper = data.map((item) =>
+          item.support && item.support.length === 2 ? item.support[1] : null
+        );
+        const resistanceLower = data.map((item) =>
+          item.resistance && item.resistance.length === 2
+            ? item.resistance[0]
+            : null
+        );
+        const resistanceUpper = data.map((item) =>
+          item.resistance && item.resistance.length === 2
+            ? item.resistance[1]
+            : null
+        );
 
         const myChart = echarts.init(document.getElementById("main"));
         const option = {
@@ -67,6 +113,8 @@
               const ohlc = params[0].data;
               const volume = params[1].data;
               const direction = data[params[0].dataIndex].direction;
+              const directionArrow =
+                direction === "up" ? "↑" : direction === "down" ? "↓" : "";
 
               return `Date: ${date}<br/>
                       Open: ${ohlc[0].toFixed(2)}<br/>
@@ -74,7 +122,7 @@
                       Low: ${ohlc[2].toFixed(2)}<br/>
                       High: ${ohlc[3].toFixed(2)}<br/>
                       Volume: ${volume.toFixed(2)}<br/>
-                      Direction: ${direction || "N/A"}`;
+                      Direction: ${directionArrow} ${direction || "N/A"}`;
             },
           },
           legend: {
@@ -161,6 +209,76 @@
               },
             },
             {
+              name: "Support Band",
+              type: "line",
+              data: supportLower,
+              lineStyle: { opacity: 0 },
+              areaStyle: {
+                color: "rgba(0, 136, 255, 0.15)",
+              },
+              showSymbol: false,
+              z: 2,
+            },
+            {
+              name: "Support Band Upper",
+              type: "line",
+              data: supportUpper,
+              lineStyle: { opacity: 0 },
+              areaStyle: {
+                color: "rgba(0, 136, 255, 0.15)",
+              },
+              showSymbol: false,
+              z: 2,
+            },
+            {
+              name: "Resistance Band",
+              type: "line",
+              data: resistanceLower,
+              lineStyle: { opacity: 0 },
+              areaStyle: {
+                color: "rgba(255, 136, 0, 0.15)",
+              },
+              showSymbol: false,
+              z: 2,
+            },
+            {
+              name: "Resistance Band Upper",
+              type: "line",
+              data: resistanceUpper,
+              lineStyle: { opacity: 0 },
+              areaStyle: {
+                color: "rgba(255, 136, 0, 0.15)",
+              },
+              showSymbol: false,
+              z: 2,
+            },
+            {
+              name: "Direction Markers",
+              type: "scatter",
+              data: data
+                .map((item, index) => {
+                  if (item.direction === "up") {
+                    return {
+                      value: [index, item.ohlc[3] + item.ohlc[3] * 0.01], // Position above the high
+                      symbol: "arrow",
+                      symbolSize: 10,
+                      itemStyle: { color: "#0CF49B" },
+                    };
+                  } else if (item.direction === "down") {
+                    return {
+                      value: [index, item.ohlc[2] - item.ohlc[2] * 0.01], // Position below the low
+                      symbol: "arrow",
+                      symbolSize: 10,
+                      symbolRotate: 180,
+                      itemStyle: { color: "#FD1050" },
+                    };
+                  }
+                  return null;
+                })
+                .filter(Boolean),
+              z: 10,
+            },
+            {
               name: "Volume",
               type: "bar",
               xAxisIndex: 1,
@@ -204,22 +322,6 @@
               smooth: true,
               showSymbol: false,
               lineStyle: { width: 1 },
-            },
-            {
-              name: "Support",
-              type: "line",
-              data: supportLine,
-              lineStyle: { type: "dashed", color: "#0088ff" },
-              showSymbol: false,
-              connectNulls: true,
-            },
-            {
-              name: "Resistance",
-              type: "line",
-              data: resistanceLine,
-              lineStyle: { type: "dashed", color: "#ff8800" },
-              showSymbol: false,
-              connectNulls: true,
             },
           ],
         };
